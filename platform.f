@@ -162,18 +162,10 @@ code (accept)	( "prompt" -- ) \ Book a call back function to receive a line from
 				/// New definition of the 'code' command. Can accept keyboard input now.
 				last redefine code
 
-code new-rescan-word-hash ( -- ) \ Rescan all word-lists in the order[] to rebuild wordhash{}
-				wordhash = {};
+code rescan-tabcompletion ( -- ) \ Rescan words for jQuery-termianl TAB autocompletion.
 				tabcompletion = [];
-				for (var j=0; j<order.length; j++) { // 越後面的 priority 越高
-					for (var i=1; i<words[order[j]].length; i++){  // 從舊到新，以新蓋舊,重建 wordhash{} hash table.
-						wordhash[words[order[j]][i].name] = words[order[j]][i];
-					}
-				}
-				for(i in wordhash) tabcompletion.push(i);
+				for(var i in wordhash) tabcompletion.push(i);
 				end-code
-				/// Used in (forget) and vocabulary words. Redefined for jQuery-termianl TAB autocompletion.
-				last redefine rescan-word-hash
 
 code screen-buffer ( -- "screen" ) \ Entire screen buffer
 				push(screenbuffer) end-code

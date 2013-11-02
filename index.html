@@ -76,6 +76,7 @@
 					tabcompletion: true,
 					completion:
 						function(term, string, callback) {
+							kvm.fortheval("' rescan-tabcompletion [if] rescan-tabcompletion [then]");
 							callback(tabcompletion);
 						},
 					prompt:
