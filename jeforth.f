@@ -1,7 +1,7 @@
 ﻿code version    ( -- revision ) \ print the greeting message and return the revision code
 				// The 'revision' variable is from index.html
 				print("j e f o r t h . n w -- r"+revision+'\n');
-				print("source code  http://T.B.D. \n");
+				print("source code  https://github.com/hcchengithub/jeforth.3nw \n");
 				push(revision);
 				end-code
 				

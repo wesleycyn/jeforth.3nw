@@ -2,6 +2,37 @@
  j e f o r t h . 3 n w
 =======================
 
+	=== jeforth 簡介 ===
+
+    2011/12/23  jeforth initial version http://www.jeforth.com by FigTaiwan 爽哥 & Yap.
+	本來是用 WWW browser 執行的，以操作 HTML5 為範例，用來推廣 forth，非常簡潔優美。
+
+	我把它 port 到 node-webkit 下執行，以便享有現代新程式的好處。 Forth 天生是個管理大量
+	命令的最佳工具，也是與電腦溝通的語法中最簡單的。我們要電腦做的事，本來只有兩句話，用
+	其他語言表達經常會變成一整頁。而 forth 的語法最自由，兩句話就是兩句話。
+
+	We have only two words in jeforth.js kernel at the beginning, they are 'code', 'end-code'
+    and if plus the NULL word at words['forth'][0] then there are 3 words total. To avoid
+	using the same name with other jeforth implementions, I name it jeforth.3nw.
+
+	=== Resources ===
+
+	o  jeforth for node-webkit source code https://github.com/hcchengithub/jeforth.3nw
+
+	o  The precedent jeforth for WSH source code http://fossilrepos.sourceforge.net/srv.fsl/0/jeforth
+
+	o  jeforth 元身為 http://tutor.ksana.tw/ksanavm 用 C 語言實現 forth 的方法之精彩教
+	   材「剎那極簡虛擬機」 by Yap/FigTaiwan.
+
+	o  Yap 講解 jeforth 精彩課程 http://www.jeforth.com/demo.html 感謝 王建鋒 的網站
+
+	o  超精彩的 waterbear 圖形積木介面 jeforth http://jforthblocks.appspot.com/static/code/index_tw.html
+       by Jimmy的爸.
+
+	o  http://www.figtaiwan.org FigTaiwan 臺灣符式推廣協會
+
+
+
 hcchen5600 2013/08/31 09:56:22  r1
 
 	I tried to add a jQuery-Terminal console for Yap/FigTaiwan's jeforth v1 
@@ -149,7 +180,7 @@ hcchen5600 2013/10/07 10:35:57 r8
 			should be printed after includeing jeforth.f to flush the echobuffer.
 		
 	[x] calling outer(ip) in fortheval() is not so beautiful.
-	[ ] words, help, don't use RegEx 
+	[x] words, help, don't use RegEx 
 	[/] 'text' has bug. "char nop text nop" will still wait for input while it should return
 		an empty string. <============ limitation
 
@@ -160,7 +191,7 @@ hcchen5600 2013/10/08 15:56:52 r9
 
 	[x] why 'words' only prints some words? ---> that's "words cr" !! not a problem.
 
-	[ ] docode's definition uses jQuery-terminal is not good. It causes a problem too, 
+	[x] docode's definition uses jQuery-terminal is not good. It causes a problem too, 
 		*** execute :  "drop" should drop the TOS ... pass 
 		[PROMPT]: Cannot call method 'echo' of undefined
 		TypeError: Cannot call method 'echo' of undefined
@@ -194,10 +225,10 @@ r10
 			close() the program <------- nothing is so bad
 			switch to Chrome debugger <----- can do that in jsc 
 
-		[ ] recall why these 3 must be separated in definition of 'alias' ??
+		[x] recall why these 3 must be separated in definition of 'alias' ??
 			fortheval("BL"); execute("word (create)");
 			
-		[ ] term.echo() or systemtype() does not print immediately until a prompt.
+		[x] term.echo() or systemtype() does not print immediately until a prompt.
 			function (){ /* test6 */
 				for(var i=0; i<100; i++) { systemtype(i+'\n'); fortheval("100 sleep"); }
 			}
@@ -205,8 +236,8 @@ r10
 			===> I am asking the author about this question.
 			===> I also found  command_line.prompt(prompt); in J/T prints the "prompt".
 			
-		[ ] Unify the display output forth words to dot . and everything depend on it.
-		[ ]	Kernel should not be I/O related at all ! Use no keyboard, print messages to
+		[x] Unify the display output forth words to dot . and everything depend on it.
+		[x]	Kernel should not be I/O related at all ! Use no keyboard, print messages to
 			startup.log instead.
 		[ ] Separate 00_init.f 01_kernel.f 02_misc.f 03_jQueryTerminal.f etc
 
@@ -243,76 +274,28 @@ r11
 		[x] Now print() already down. I don't need to modify forth words! So convenient.
 			But the screenbuffer does not have command line. 
 	
-		[ ] As shown below, 100 long works fine, but 100 long2's last line won't be shown until an enter
+		[x] As shown below, 100 long works fine, but 100 long2's last line won't be shown until an enter
 			will be pressed. Question is 'how to make printing stream a queue !!' 
-			
-			: dot
-				js: setTimeout(resumeForthVM,1)
-				. suspend
-				;
-			: long for r@ dot ." : fortheval.level = " dot js> fortheval.level dot space next ;
-			100 long
-			
-			: long2 for r@ dot ." : fortheval.level = " . js> fortheval.level dot space cr next ;
-			100 long2
 
-			: dot js: newprint(pop()) ;
-			: long 
-				for 
-					r@ dot 
-					s" : fortheval.level = " dot js> fortheval.level dot s" , " dot 
-					s" flush.count = " dot js> flush.count dot s"  " dot 
-				next 
-			;
-			js: flush.enable=true
-			100 long 
-			
-			\ -----------------------------------------------------------------------
-			js: flush.enable=true
-			: dot
-				js: setTimeout(resumeForthVM,1);newprint(pop())
-				suspend
-				;
-			: t 1111 dot 2222 dot 3333 dot ;
-			: long 
-				for 
-					r@ dot 
-					s" : fortheval.level = " dot js> fortheval.level dot s" , " dot 
-					s" flush.count = " dot js> flush.count dot s"  " dot 
-				next 
-			;
-			100 long 
-			\ -----------------------------------------------------------------------
-			: dot
-				js: newprint(pop())
-				;
-			: t 1111 dot 2222 dot 3333 dot ;
-			: long 
-				for 
-					r@ dot 
-					s" : fortheval.level = " dot js> fortheval.level dot s" , " dot 
-					s" flush.count = " dot js> flush.count dot s"  " dot 
-				next 
-			;
-			100 long 
-			\ -----------------------------------------------------------------------
-			: sleep ( ms -- ) \ Suspend the forth VM for mS
-				js: setTimeout(resumeForthVM,pop())
-				suspend
-				;
-		[ ] next step, work on the keyboard input, accept. that will be r12 then . . .
+		[x] next step, work on the keyboard input, accept. that will be r12 then . . .
 
 r12 
-		[ ] 'how to make printing stream a queue !!' 
+		[x] 'how to make printing stream a queue !!' 
 		
-r13
-		[ ] working on jeforth.f here, ugly, other ~.f needs to refer to tick('<selftest>').enable too
+r13		
+		[x] working on jeforth.f here, ugly, other ~.f needs to refer to tick('<selftest>').enable 
+			too.
 		js> require('nw.gui') constant nw.gui // Note-webkit GUI module
 		nw.gui js> pop().App.argv.length [if] 
 			js: tick('<selftest>').buffer="";
 		[else] 
 			js> tick('<selftest>').buffer tib.insert
 		[then] 
-r14
-		[ ] TAB autocompletion !!
+		終於都搞定了，要讓 display 即時輸出，forth VM 必須讓出 CPU。辦法還是 forth VM 的 suspend-
+		resume. 做成 forth word sleep command. 例如： : t for r@ . space 1 sleep next ; 這個
+		"1 sleep" 就是讓 forth VM 休息 1 mS 以便把 CPU 讓出來給 DOM 去做 dispaly 輸出。
+		
+
+r14		
+		[x] TAB autocompletion !!
 		
