@@ -1,0 +1,11 @@
+{
+  "name": "jeforth with jQuery-Terminal",
+  "description": "jeforth",
+  "version": "r1",
+  "main": "index.html",
+  "window": {
+    "toolbar": true,
+    "width": 860,
+    "height": 500
+  }
+}

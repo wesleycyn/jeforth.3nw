@@ -1,0 +1,318 @@
+
+ j e f o r t h . 3 n w
+=======================
+
+hcchen5600 2013/08/31 09:56:22  r1
+
+	I tried to add a jQuery-Terminal console for Yap/FigTaiwan's jeforth v1 
+	on HTA environment. But turned out to find HTA is a sinking boat so I 
+	am moving the bits to node-webkit. ----------- done!
+	
+	[x] how to gets() or readline() ?
+	==> No way. I think that I need to put up with the event driven style.
+
+
+hcchen5600 2013/08/31 11:34:59  r2
+
+	I don't know how to deal with the event driven gets(). Let's do and
+	see. Start to port my two words kernal. The two words are code and end-code.
+	hcchen5600 2013/10/01 16:53:43 
+	I can handle the event-driven keyboard input now! I split the gets() job 
+	into two phases. Whether the rear phase can continue to finish the job is
+	the key to success. My recent case is the docode() function, its rear phase
+	is to execute the 'end-code' and that's do-able. Another important thing is
+	that the call-back function is not as terrible as I thought. Call-back function
+	can be defined *within* a mother function and the beautiful thing is that the
+	mother function's variable is not volatile. Callback function can access
+	them even after the mother function has ended!
+
+
+hcchen5600 2013/10/03 00:40:10 r3
+
+	jeforth03 is now very well. But term.echo() always prints a \n that's not what
+	dot . command is expeting. I am asking the question at 
+	https://github.com/jcubic/jquery.terminal/issues/124
+	and I found a place to demo qestions : http://jsfiddle.net/eephillip/dEczJ/
+
+
+hcchen5600 2013/10/03 11:26:43 r4
+
+	(1) 
+	The problem of echo() can be resolved by replacing echo by something like this,
+	window.echobuffer ="";
+	function myecho(){
+		if (echobuffer){
+			terminal.echo(echobuffer);
+			echobuffer = ""
+		}
+		terminal.echo("OK ");
+	}
+	terminal.set_prompt(myecho);
+	
+	(2)
+	jsc , accept , *debug* <---- shell also docode()
+	When in such shells, the jeforth is still running !! <----- Problem, like in breakpoint is expected.
+	jsc in interpreter or outer loop has been fixed by using the pasueExec flag. Going to work in inner 
+	loop . . . . that will be r5
+
+
+hcchen5600 2013/10/04 13:54:01 r5
+
+	done !
+	evernote:///view/2472143/s22/ab302a71-bb94-44d5-98d6-7b924befc16e/ab302a71-bb94-44d5-98d6-7b924befc16e/
+
+
+hcchen5600 2013/10/05 10:36:51 r6
+
+	Design suspendForthVM - resumeForthVM  ..... OK!
+	Use suspend-resume and jQuery-terminal's term.push()-pop() have successfully 
+	accomplished 'accept', '*debug*', 'jsc', and 'docode'.
+	But I think if make suspend-resume forth words then a read-line colon word 
+	would be even more interesting . . . that would be r7
+
+
+hcchen5600 2013/10/06 17:01:51 r7
+
+	I found a r6's problem when developing r7. See below example,
+
+		j e f o r t h . n w -- r6
+		OK : test 1 2 3 accept 4 5 6 ;
+		OK : test2 11 22 33 test 44 55 66 ;
+		OK test2
+		> sdfsdff sfsfsdf
+		OK .s
+			0:         11          bh (number)
+			1:         22         16h (number)
+			2:         33         21h (number)
+			3:          1          1h (number)
+			4:          2          2h (number)
+			5:          3          3h (number)
+			6: sdfsdff sfsfsdf (string)
+			7: true (boolean)
+			8:          4          4h (number)
+			9:          5          5h (number)
+			a:          6          6h (number)
+		OK  <---------- problem! 44 55 66 is missing. Because intter loop
+						terminated by 'endinner' that is raied up by test's 'ret'.
+						When resuming, outer() should let inner() know whether it's resuming.
+						The inner() ignores endinner flag when resuming, because the deep inner 
+						loop issue is impossible, . 
+
+		r7 has fixed the problem already.
+	
+	[x] : test 1 2 3 unknown-word 4 5 6 ; <----- still create a new word !! Error handling is bad.
+	[x] Can't abort 'accept' by Ctrl-D is not good. ==> Ctrl-D can clear the line.
+	[/] Use suspend-resume has made 'accept' much smaller and more readable!
+		Re-write jsc, *debug* <----------- let them be.
+	[x] include
+	[ ] selftest of all words, refer to 
+	[ ] vocabulary
+	[ ] WMI
+	[ ] excel
+
+hcchen5600 2013/10/07 10:35:57 r8
+
+	Self-test study
+	Now I've got an idea for self-test! Design two words <selftest> and </selftest>
+	that collect the string within to the selftest string variable. Then fortheval(selftest) at
+	the end! So we can use all words in the self-test sections, beautiful!
+
+	code <selftest> ( <statements> -- ) \ Collect self test statements to selftest string
+		var s = nexttoken("</selftest>");
+		if (!s.flag) {
+			do { 
+				s += nextstring("</selftest>").str;
+			} while(!s.flag);
+		}
+		push(s); 
+		end-code
+	code </selftest> ( "selftest" -- ) \ Save the self test statements to the global variable selftest.
+		selftest = pop()
+		end-code 
+		
+	[x] Why call-stack is so deep when including jeforth.f ?
+		Because docode() calls outer() is very strange !!!
+	[x] panic should print ntib first. How to avoid printing the entire huge tib? 
+		print tib.substr(ntib, 80)
+	[x] Use debugger; to write a breakpoint("prompt",conditon)
+	[x] echobuffer is not dump! Move into prompt() doesn't fixed the problem.
+		same problem : 'words' prints nothing now ???!!!! 
+		==> Because the OK prompt was there before running the self-test section!
+		    why? I guess, because the OK prompt is actually the first one of the 
+			entire session. It was there at the beginning. The OK prompt we expect to
+			print the echobuffer needs an enter from the keyboard.
+		==> If use '\n' then ok. The auther thinks term.echo() should always have a '\n' at the end.
+			and he has no idea about my echobuffer.
+		==> So how about to print a '\n' after self-test?
+	*** ==> root cause is, jeforth.f and self-test are all running in jQuery-termianl's
+			onInit: section. Of course the prompt is not working yet. So an ending '\n'
+			should be printed after includeing jeforth.f to flush the echobuffer.
+		
+	[x] calling outer(ip) in fortheval() is not so beautiful.
+	[ ] words, help, don't use RegEx 
+	[/] 'text' has bug. "char nop text nop" will still wait for input while it should return
+		an empty string. <============ limitation
+
+	
+	self-test infrastructure is Ok, now r9 to go on developing the self-tests.
+	
+hcchen5600 2013/10/08 15:56:52 r9
+
+	[x] why 'words' only prints some words? ---> that's "words cr" !! not a problem.
+
+	[ ] docode's definition uses jQuery-terminal is not good. It causes a problem too, 
+		*** execute :  "drop" should drop the TOS ... pass 
+		[PROMPT]: Cannot call method 'echo' of undefined
+		TypeError: Cannot call method 'echo' of undefined
+			at prompt (file:///W:/jeforth09/index.html:24:12)
+			at validate (file:///W:/jeforth09/jquery.terminal-0.7.6.js:2418:21)
+			at $.extend.$.omap.set_prompt (file:///W:/jeforth09/jquery.terminal-0.7.6.js:3219:25)
+			at null.set_prompt (file:///W:/jeforth09/jquery.terminal-0.7.6.js:3510:36)
+			at Word.newxt [as xt] (eval at readCodeBody (file:///W:/jeforth09/jeforth.js:439:11), <anonymous>:20:10)
+			at Object.KsanaVm.phaseB.object (file:///W:/jeforth09/jeforth.js:301:12)
+			at execute (file:///W:/jeforth09/jeforth.js:312:21)
+			at outerExecute (file:///W:/jeforth09/jeforth.js:359:7)
+			at outer (file:///W:/jeforth09/jeforth.js:341:5)
+			at Object.resumeForthVM [as onExit] (file:///W:/jeforth09/jeforth.js:685:4)
+			at $.extend.$.omap.pop (file:///W:/jeforth09/jquery.terminal-0.7.6.js:3442:41)
+		jsc> exit
+		*** interpret-only :  should make dummy interpret-only ... pass 
+		> 
+
+r10
+			... to the above problem,
+		[x] my idea is to re-write code end-code to colon words. So in jeforth.js they
+			assume tib is never end! This must be r10. ===> on going now ...
+			==> r10 done but problem is still there. Root cause is not 'code', root cause
+				is "term.set_prompt(prompt)" statement in ';'.
+
+		[x] panic to be replaced by colon word, <---- no! 
+			so as to wait for an user's response <----- separate Warnings and Errors
+			or launch an alert("message") <--- no, alert() has only [ok]
+			Reset() or not?  <------------ error jump into jsc, up to the user.
+			Switch to jsc <------ errors
+			close() the program <------- nothing is so bad
+			switch to Chrome debugger <----- can do that in jsc 
+
+		[ ] recall why these 3 must be separated in definition of 'alias' ??
+			fortheval("BL"); execute("word (create)");
+			
+		[ ] term.echo() or systemtype() does not print immediately until a prompt.
+			function (){ /* test6 */
+				for(var i=0; i<100; i++) { systemtype(i+'\n'); fortheval("100 sleep"); }
+			}
+			so systemtype() should issue a prompt for '\n'.
+			===> I am asking the author about this question.
+			===> I also found  command_line.prompt(prompt); in J/T prints the "prompt".
+			
+		[ ] Unify the display output forth words to dot . and everything depend on it.
+		[ ]	Kernel should not be I/O related at all ! Use no keyboard, print messages to
+			startup.log instead.
+		[ ] Separate 00_init.f 01_kernel.f 02_misc.f 03_jQueryTerminal.f etc
+
+r11 
+		[x] remove I/O related things out of jeforth.js and even jeforth.f. Basic I/O is in index.htm only.
+		[x] I found a problem in older jeforth! 'alias' should not copy everyting by value.
+			not arrays and not objects.
+			but .creater should copy by value so as to add 'alias'
+		[x] If we want && and || then we better do it right.
+			&& ( a b == a && b ) if a then b else swap endif
+			|| ( a b == a || b ) if a then swap else b endif
+		[x] Hex is stragne in JavaScript, -1 & 0xffffffff will be still -1. That means hex is 32 bits
+			and bit 31 is the sign bit. But not exactly, because 0xfff(over 32 bits) can be existing.
+			However, my job is just to print hex correctly by using .r and .0r. So I simply use a 
+			workaround that prings higher 16 bits and then lower 16 bits separatedly then JavaScript's
+			opinion about hex won't bother anymore.
+			
+			n = (n >> 16 & 0xffff).toString(base) + (n & 0xffff).toString(base);
+	
+			JavaScript's decimal can be very big numbers. But hex is a little strange.
+			For example, -2 >> 1 is -1 correct, -2 >> 31 is also -1 correct, but -2 >> 32 become -2 !!
+			It seems like a 32 bits system when bitwise. So my .s only prints the lower 32 bits hex.
+			
+		[x] Self-test done Shooooo! But it won't be executed without a trigger. So jeforth.f is 
+			started by jQuery-termianl.onInit. 
+	
+		[x] print('\n') doesn't do anything just like <js>  $.terminal.active().echo("") </js> either.
+			But <js>  $.terminal.active().echo("\n") </js> and
+			But <js>  $.terminal.active().echo(" \n") </js> both prints two blank lines.
+			While print(" ") and print(" \n") both print one blank line only.
+			===> fixed. Debug using Chrome debugger; console.log(), find the repro procedure first..
+			     etc have helpped a lot. Don't forget to write down the notes, this is so important.
+
+		[x] Now print() already down. I don't need to modify forth words! So convenient.
+			But the screenbuffer does not have command line. 
+	
+		[ ] As shown below, 100 long works fine, but 100 long2's last line won't be shown until an enter
+			will be pressed. Question is 'how to make printing stream a queue !!' 
+			
+			: dot
+				js: setTimeout(resumeForthVM,1)
+				. suspend
+				;
+			: long for r@ dot ." : fortheval.level = " dot js> fortheval.level dot space next ;
+			100 long
+			
+			: long2 for r@ dot ." : fortheval.level = " . js> fortheval.level dot space cr next ;
+			100 long2
+
+			: dot js: newprint(pop()) ;
+			: long 
+				for 
+					r@ dot 
+					s" : fortheval.level = " dot js> fortheval.level dot s" , " dot 
+					s" flush.count = " dot js> flush.count dot s"  " dot 
+				next 
+			;
+			js: flush.enable=true
+			100 long 
+			
+			\ -----------------------------------------------------------------------
+			js: flush.enable=true
+			: dot
+				js: setTimeout(resumeForthVM,1);newprint(pop())
+				suspend
+				;
+			: t 1111 dot 2222 dot 3333 dot ;
+			: long 
+				for 
+					r@ dot 
+					s" : fortheval.level = " dot js> fortheval.level dot s" , " dot 
+					s" flush.count = " dot js> flush.count dot s"  " dot 
+				next 
+			;
+			100 long 
+			\ -----------------------------------------------------------------------
+			: dot
+				js: newprint(pop())
+				;
+			: t 1111 dot 2222 dot 3333 dot ;
+			: long 
+				for 
+					r@ dot 
+					s" : fortheval.level = " dot js> fortheval.level dot s" , " dot 
+					s" flush.count = " dot js> flush.count dot s"  " dot 
+				next 
+			;
+			100 long 
+			\ -----------------------------------------------------------------------
+			: sleep ( ms -- ) \ Suspend the forth VM for mS
+				js: setTimeout(resumeForthVM,pop())
+				suspend
+				;
+		[ ] next step, work on the keyboard input, accept. that will be r12 then . . .
+
+r12 
+		[ ] 'how to make printing stream a queue !!' 
+		
+r13
+		[ ] working on jeforth.f here, ugly, other ~.f needs to refer to tick('<selftest>').enable too
+		js> require('nw.gui') constant nw.gui // Note-webkit GUI module
+		nw.gui js> pop().App.argv.length [if] 
+			js: tick('<selftest>').buffer="";
+		[else] 
+			js> tick('<selftest>').buffer tib.insert
+		[then] 
+r14
+		[ ] TAB autocompletion !!
+		

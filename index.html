@@ -1,0 +1,97 @@
+﻿<html>
+<head>
+	<title>jeforth.nw with jQuery-terminal</title>
+	<meta charset="utf-8" />
+    <script src="jquery-1.10.2.js"></script>
+    <script src="jquery.terminal-0.7.7.js"></script>
+    <script src="jquery.mousewheel-min.js"></script>
+	<Script src="jeforth.js"></Script>
+    <link href="jquery.terminal.css" rel="stylesheet"/>
+</head>
+<body>
+	<div id="forthConsole"></div>
+	<script>
+		var revision = 14;
+		var debug = false;
+		var indebug = false; // enable newprint() last line when in *debug*.
+		var fs = require( "fs" ); // http://nodejs.org/api/fs.html
+		var screenbuffer = ""; // print() to screenbuffer before I/O ready
+		var print = function(s){ screenbuffer += s}; // was systemtype(), print() is more readable.
+ 		var prompt = "OK ";
+		var tabcompletion = ['foo', 'bar', 'baz']; // jQuery-terminal TAB autocompletion command set.
+
+		// Usage:
+		//    keyboard.readline(callback); suspendForthVM;
+		//    callback(line){ ... resumeForthVM; }
+		// Definition of 'accept' is an example.
+		var keyboard = {  // keyboard input from jQuery-terminal, Constant.
+			waiting: false,// if someone is waiting for an input string
+			callback: function(){}, // call back function.
+			line: "",  
+			readline: 
+				function(f){
+					if (this.waiting) {
+						$.terminal.active().echo(
+							"Error! Double requesting keyboard.readline()!\n"
+						);
+					} else {
+						this.callback = f;
+						this.waiting = true;
+					}
+				}
+		}
+	
+		// call back function. jQuery-terminal pass in the input 'line' and the (t)erminal object.
+		function forthConsoleHandler(line, t) {
+			if (keyboard.waiting){
+				keyboard.waiting = false; // the waiting has ended now
+				keyboard.callback(keyboard.line = line);
+			} else {
+				screenbuffer += "OK " + line + '\n';
+				kvm.fortheval(line);  // Pass the line to KsanaVM
+				print("",true); // flush the print.lastline
+			}
+		}
+
+		jQuery(document).ready(function($) {  
+		// jQuery convention, learned from W3School, make sure web page is ready.
+		// ----- specify the jQuery-terminal -----------------
+			// $('#forthConsole').terminal(  // forthConsole can be div, body, td, ... etc.
+			$('body').terminal(
+				forthConsoleHandler,  // specify the handler
+				{ // terminal global settings and options
+					onInit: 
+						function(t){ // 't' 此時只是虛名，terminal 實體將來某時才會出現。
+							kvm.init(t);
+							kvm.fortheval(fs.readFileSync("jeforth.f",'utf8'));
+						}, 
+					name: "jeforth.3nw", // each jQuery-terminal has its own name.
+					greetings: "j e f o r t h . n w -- r" + revision, // appears when the terminal first launched
+					onBlur: 
+						function(){
+							return false; // prevent loosing focus
+						},
+					height: 400,
+					// outputLimit: 25, Don't use this option. Not suitable for jeforth console.
+					tabcompletion: true,
+					completion:
+						function(term, string, callback) {
+							callback(tabcompletion);
+						},
+					prompt:
+						function(pprint,t){ // pprint is callback function from jQuery-terminal that prints prompt
+							// when jQuery-terminal is doing a validating t could be NULL 
+							if(t){ 
+								t.clear();
+								t.echo(screenbuffer);
+							}
+							pprint(prompt); 
+						},
+					exit: false // Terminal does not handle ctrl-D and skips 'exit' command.
+				}
+			);
+		});
+
+	</script>
+</body>
+</html>
