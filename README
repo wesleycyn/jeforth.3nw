@@ -29,7 +29,9 @@
 	o  超精彩的 waterbear 圖形積木介面 jeforth http://jforthblocks.appspot.com/static/code/index_tw.html
        by Jimmy的爸.
 
-	o  http://www.figtaiwan.org FigTaiwan 臺灣符式推廣協會
+	o  臺灣符式推廣協會 FigTaiwan 
+       https://groups.google.com/forum/#!forum/figtaiwan
+       http://www.figtaiwan.org
 
 
 
@@ -298,4 +300,14 @@ r13
 
 r14		
 		[x] TAB autocompletion !!
-		
+
+r15		
+		<js> redefined in platform.f so now it accepts input from keyboard.
+
+		Add a demo to compile eforth for DOS and that generates eforth.com. 
+		Usage : 
+			"nw jeforth.3nw include 86ef202.f bye" 
+		, generates eforth.com at the working directery. 
+
+
+

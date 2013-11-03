@@ -1,9 +1,5 @@
 ﻿.( Including platform.f )
 
-\ s" platform.f" 	.( Including ) dup . also forth definitions 
-\ 				char -- over over + + (marker) (vocabulary) 
-\ 				last execute definitions
-
 <text>
 	Should io.f or platform.f be loaded before jeforth.f kernel code or after it? jeforth.f 
 	kernel doesn't need any actual I/O. Words like dot . , accept , etc can use either print 
@@ -161,6 +157,11 @@ code (accept)	( "prompt" -- ) \ Book a call back function to receive a line from
 				char end-code text + CR + char } + js: eval(pop()) ;
 				/// New definition of the 'code' command. Can accept keyboard input now.
 				last redefine code
+
+: new-<js>		( <js statements> -- "statements" ) \ Evaluate JavaScript statements
+				char </js>|</jsV>|</jsN>|</jsv>|</jsn>|</jsR>|</jsr> text
+				[compile] compiling if [compile] literal then ; immediate
+				last redefine <js> 
 
 code rescan-tabcompletion ( -- ) \ Rescan words for jQuery-termianl TAB autocompletion.
 				tabcompletion = [];

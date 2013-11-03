@@ -1447,11 +1447,11 @@ code bye        ( ERRORLEVEL -- ) \ Exit to shell with TOS as the ERRORLEVEL.
                 close();
                 end-code
 
-code readTextFile ( "pathname" -- string ) \ Read utf8 text file to a string. Panic if failed.
+code readFile 	( "pathname" -- string ) \ Read utf8 text file to a string. Panic if failed.
 				push(fs.readFileSync(pop(),'utf8'));
 				end-code
 				
-code writeTextFile ( string "pathname" -- ) \ Write string to utf8 text file. Panic if failed.
+code writeFile ( string "pathname" -- ) \ Write string to utf8 text file. Panic if failed.
 				fs.writeFileSync(pop(),pop(),'utf8')
 				end-code
 
@@ -1472,13 +1472,13 @@ code tib.insert	( "string" -- ) \ Insert the "string" into TIB
 				tib = before + " " + pop() + " " + after; end-code
 
 code sinclude.js ( "pathname" -- ) \ Include JavaScript source file
-				fortheval("readTextFile"); eval(pop());
+				fortheval("readFile"); eval(pop());
 				end-code
 : include.js	( <pathname> -- ) \ Include JavaScript source file
 				BL word sinclude.js ;
 
 : sinclude		( "pathname" -- ... ) \ Lodad the given forth source file.
-				readTextFile tib.insert ;
+				readFile tib.insert ;
 
 : include       ( <filename> -- ... ) \ Load the source file if it's not included yet.
 				BL word sinclude ; interpret-only
@@ -1516,13 +1516,13 @@ code notpass	( -- ) \ List words their sleftest flag are not 'pass'.
  
 				<selftest>
 					marker ---
-					*** d dump notpass readTextFile writeTextFile ...
+					*** d dump notpass readFile writeFile ...
 					js> screenbuffer constant screenwas
 					cls d 0
 					<js> screenbuffer.indexOf('00000: 0 (number)') !=-1 </jsV> \ true
 					cls notpass cr 
-					js> screenbuffer char selftest.log writeTextFile
-					char selftest.log readTextFile constant verify // read back the selftest.log for verification
+					js> screenbuffer char selftest.log writeFile
+					char selftest.log readFile constant verify // read back the selftest.log for verification
 					verify <js> pop().indexOf('bye') !=-1 </jsV> \ true
 					verify <js> pop().indexOf('***') !=-1 </jsV> \ true
 					verify <js> pop().indexOf('pass') !=-1 </jsV> \ true
@@ -1532,7 +1532,7 @@ code notpass	( -- ) \ List words their sleftest flag are not 'pass'.
 					verify <js> pop().indexOf('Error') ==-1 </jsV> \ true
 					screenwas js: screenbuffer=pop()
 					and and and and and and and ==>judge [if] 
-					<js> ['dump', 'notpass', 'readTextFile', 'writeTextFile'] </jsv> all-pass 
+					<js> ['dump', 'notpass', 'readFile', 'writeFile'] </jsv> all-pass 
 					[then]
 					---
 				</selftest>
@@ -1562,7 +1562,7 @@ code q			( -- ) \ Exit from forth debug console.
 	cr .( The following words are not tested yet : ) cr
 	notpass cr cr
 	.(( Saving selftest information to log file 'selftest.log'. )) cr
-	js> screenbuffer char selftest.log writeTextFile
+	js> screenbuffer char selftest.log writeFile
 	~~selftest~~ 								\ forget self-test temporary words
 	js: $.terminal.active().echo(screenbuffer) 	\ print the self-test results to terminal 
 	js: tick('<selftest>').buffer="" 			\ clear the self-test section, recycle the memory

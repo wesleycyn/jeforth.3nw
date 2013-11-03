@@ -1,4 +1,4 @@
-s" mytools.f"	.( Including ) dup . also forth definitions 
+s" mytools.f"	.( Including ) dup . cr also forth definitions 
 				char -- over over + + (marker) (vocabulary) 
 				last execute definitions
 

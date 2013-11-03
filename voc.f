@@ -265,12 +265,7 @@ code help       ( [<pattern>] -- ) \ Print help messages of words which are scre
 					and ==>judge [if] <js> [ ] </jsv> all-pass [then]
 				</selftest>
 
-				<selftest>
-				--voc.f-self-test--
-				</selftest>
-				
-js> tick('<selftest>').enabled [if] 
-	js> tick('<selftest>').buffer tib.insert
-[then] js: tick('<selftest>').buffer="" \ recycle the memory
-
+<selftest> --voc.f-self-test-- </selftest>
+js> tick('<selftest>').enabled [if] js> tick('<selftest>').buffer tib.insert [then] 
+js: tick('<selftest>').buffer="" \ recycle the memory
 

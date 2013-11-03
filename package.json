@@ -1,6 +1,6 @@
 {
-  "name": "jeforth with jQuery-Terminal",
-  "description": "jeforth",
+  "name": "jeforth.3nw",
+  "description": "3 words jeforth.js for node-webkit with jQuery-Terminal",
   "version": "r1",
   "main": "index.html",
   "window": {
